@@ -1,0 +1,16 @@
+{
+  "name": "youtube-jukebox-backend",
+  "version": "2.0.0",
+  "description": "Production-grade collaborative YouTube queue server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "ws": "^8.18.0",
+    "yt-search": "^2.11.1"
+  }
+}

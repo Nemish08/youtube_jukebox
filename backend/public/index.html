@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Office Jukebox • Social Music Queue</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CDN & Styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            brand: {
+              50: '#fff1f2',
+              500: '#f43f5e',
+              600: '#e11d48',
+              700: '#be123c',
+              900: '#4c0519',
+              950: '#28020d'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body class="bg-[#070a13] text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-[90%] max-w-sm"></div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 backdrop-blur-xl bg-[#070a13]/80 border-b border-white/[0.06] transition-all">
+    <div class="max-w-xl mx-auto px-4 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-rose-400 shadow-lg shadow-brand-600/30">
+          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+        </div>
+        <div>
+          <span class="text-sm font-extrabold tracking-wide text-white uppercase block leading-tight">Jukebox</span>
+          <span class="text-[10px] text-slate-400 font-medium">Collaborative Queue</span>
+        </div>
+      </div>
+
+      <!-- Room & User Chip -->
+      <div class="flex items-center gap-2">
+        <button id="headerShareBtn" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-medium bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-300 transition active:scale-95" title="Copy Invite Link">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="headerRoomLabel">...</span>
+          <svg class="w-3.5 h-3.5 text-slate-400 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+          </svg>
+        </button>
+        <span id="userBadge" class="hidden px-2.5 py-1 rounded-full text-[11px] font-semibold bg-brand-950/80 border border-brand-700/50 text-rose-300"></span>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-xl w-full mx-auto p-4 sm:p-5 flex flex-col justify-start">
+
+    <!-- ================= JOIN / SIGN IN SCREEN ================= -->
+    <section id="joinSection" class="my-auto py-8">
+      <div class="relative bg-gradient-to-b from-[#111827] to-[#0c121e] p-6 sm:p-8 rounded-3xl border border-white/[0.08] shadow-2xl backdrop-blur-2xl overflow-hidden">
+        
+        <!-- Glow highlight behind card -->
+        <div class="absolute -top-24 -right-24 w-52 h-52 bg-brand-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-950/70 border border-brand-800/40 text-[11px] font-bold text-rose-400 uppercase tracking-widest mb-4">
+            Office Sound System
+          </div>
+          <h2 class="text-2xl font-extrabold text-white tracking-tight mb-2">Join the Session</h2>
+          <p class="text-xs sm:text-sm text-slate-400 mb-6 leading-relaxed">
+            Enter your name to queue your favorite music on the main screen in real-time.
+          </p>
+
+          <form id="joinForm" class="space-y-4">
+            <div>
+              <label for="roomInput" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Room Code</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="roomInput" 
+                  placeholder="e.g. OFFICE-1" 
+                  required
+                  autocomplete="off"
+                  class="w-full px-4 py-3.5 bg-black/40 rounded-2xl border border-white/[0.1] focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 uppercase font-mono font-bold tracking-wider text-white placeholder-slate-600 transition"
+                >
+              </div>
+            </div>
+
+            <div>
+              <label for="nameInput" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Name</label>
+              <input 
+                type="text" 
+                id="nameInput" 
+                placeholder="e.g. Sarah Connor" 
+                required
+                autocomplete="name"
+                class="w-full px-4 py-3.5 bg-black/40 rounded-2xl border border-white/[0.1] focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 text-white placeholder-slate-600 font-medium transition"
+              >
+            </div>
+
+            <button 
+              type="submit" 
+              id="joinBtn" 
+              class="w-full mt-2 bg-gradient-to-r from-brand-600 to-rose-600 hover:from-brand-500 hover:to-rose-500 text-white font-bold py-3.5 px-6 rounded-2xl transition duration-200 shadow-xl shadow-brand-950/60 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>Connect & Queue Songs</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+              </svg>
+            </button>
+          </form>
+
+          <!-- QR Code Trigger -->
+          <div class="mt-6 pt-5 border-t border-white/[0.06] flex items-center justify-between text-xs text-slate-400">
+            <span>Invite coworkers nearby</span>
+            <button id="showQrBtn" class="text-rose-400 hover:text-rose-300 font-semibold underline underline-offset-4 cursor-pointer">
+              Show QR Code
+            </button>
+          </div>
+
+          <div id="qrDrawer" class="hidden mt-4 p-4 bg-black/50 rounded-2xl border border-white/[0.08] flex flex-col items-center gap-3 text-center">
+            <img id="joinQrImage" class="w-36 h-36 rounded-xl bg-white p-2 shadow-lg" alt="Scan to join">
+            <p class="text-[11px] text-slate-400">Scan with phone camera to join directly</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DASHBOARD SECTION ================= -->
+    <section id="dashboardSection" class="hidden space-y-6 pb-12">
+      
+      <!-- NOW PLAYING HERO CARD (NO SKIP BUTTON - HOST PROTECTED) -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#161f33] to-[#0c121e] border border-white/[0.08] shadow-2xl p-5">
+        
+        <!-- Background Vinyl Ambient Glow -->
+        <div id="ambientGlow" class="absolute -right-16 -top-16 w-56 h-56 bg-brand-600/15 rounded-full blur-3xl pointer-events-none transition-all duration-700"></div>
+
+        <div class="relative z-10">
+          
+          <!-- Card Header Info -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <!-- Animated Equalizer Bars -->
+              <div id="equalizer" class="flex items-end gap-0.5 h-3.5">
+                <span class="w-1 bg-rose-500 rounded-full h-full animate-[bounce_0.8s_infinite]"></span>
+                <span class="w-1 bg-rose-400 rounded-full h-2/3 animate-[bounce_1.1s_infinite]"></span>
+                <span class="w-1 bg-rose-500 rounded-full h-4/5 animate-[bounce_0.9s_infinite]"></span>
+                <span class="w-1 bg-rose-300 rounded-full h-1/2 animate-[bounce_1.3s_infinite]"></span>
+              </div>
+              <span class="text-[11px] font-extrabold uppercase tracking-widest text-rose-400">Now Playing</span>
+            </div>
+
+            <!-- Host Protected Badge replacing Skip Button -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800/80 text-slate-300 border border-white/[0.08] select-none" title="Skipping is only allowed from the Host YouTube tab">
+              <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              <span>Host Controlled</span>
+            </div>
+          </div>
+
+          <!-- Track Presentation Box -->
+          <div class="flex gap-4 items-center">
+            <div class="relative group shrink-0">
+              <img 
+                id="npThumb" 
+                class="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-2xl bg-slate-900 border border-white/[0.1] shadow-lg transition duration-300"
+                src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231e293b'><rect width='24' height='24'/></svg>"
+                alt="Album artwork"
+              >
+              <div id="discSpinner" class="hidden absolute inset-0 rounded-2xl ring-1 ring-white/20"></div>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <h3 id="npTitle" class="text-base sm:text-lg font-bold text-white truncate leading-snug">
+                Queue is Idle
+              </h3>
+              <p id="npAuthor" class="text-xs sm:text-sm text-slate-400 truncate mt-1">
+                Add songs below to start playing!
+              </p>
+              
+              <div class="mt-2.5 flex items-center gap-2 flex-wrap">
+                <span id="npUser" class="inline-flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-lg bg-white/[0.05] text-slate-300 border border-white/[0.06]">
+                  <svg class="w-3 h-3 text-rose-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span id="npUserText">No track loaded</span>
+                </span>
+                <span id="npDuration" class="text-[11px] font-mono text-slate-500"></span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- SEARCH & ADD BAR -->
+      <div class="space-y-3">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Queue a Video</label>
+        
+        <div class="relative flex items-center">
+          <input 
+            type="text" 
+            id="searchInput" 
+            placeholder="Search song title, artist, or YouTube keywords..." 
+            autocomplete="off"
+            class="w-full pl-11 pr-24 py-3.5 bg-[#111827] border border-white/[0.09] rounded-2xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition shadow-inner"
+          >
+          <div class="absolute left-4 text-slate-500 pointer-events-none">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+
+          <button 
+            id="searchBtn" 
+            class="absolute right-2 px-4 py-2 bg-brand-600 hover:bg-brand-500 active:scale-95 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-md shadow-brand-950/40"
+          >
+            Search
+          </button>
+        </div>
+
+        <!-- SEARCH RESULTS CONTAINER -->
+        <div id="searchResults" class="hidden flex-col gap-2 max-h-80 overflow-y-auto pr-1 py-1"></div>
+      </div>
+
+      <!-- UPCOMING QUEUE SECTION -->
+      <div class="space-y-3 pt-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Upcoming Queue</h3>
+            <span id="queueCount" class="text-[11px] font-mono bg-white/[0.06] border border-white/[0.08] text-slate-400 px-2 py-0.5 rounded-full">0 songs</span>
+          </div>
+          <span class="text-[10px] text-slate-500">Auto-plays in order</span>
+        </div>
+
+        <div id="queueList" class="flex flex-col gap-2.5">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Sticky Footer -->
+  <footer class="py-4 text-center text-[11px] text-slate-500 border-t border-white/[0.04]">
+    Office Jukebox • Powered by YouTube Cloud Engine
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

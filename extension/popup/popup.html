@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jukebox Host Deck</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="deck-container">
+    
+    <!-- Top Deck Header -->
+    <header class="deck-header">
+      <div class="brand">
+<div class="brand-icon">
+  <img src="../icons/icon48.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+</div>
+        <div>
+          <h1 class="brand-title">JUKEBOX HOST</h1>
+          <span class="brand-sub">CONTROLLER v2.0</span>
+        </div>
+      </div>
+
+      <!-- Live Status Pill -->
+      <div id="statusPill" class="status-pill offline">
+        <span class="status-dot"></span>
+        <span id="statusText">STANDBY</span>
+      </div>
+    </header>
+
+    <!-- Now Playing Mini Deck (Appears when Host is Running) -->
+    <div id="liveTrackCard" class="live-card hidden">
+      <div class="live-card-head">
+        <div class="live-indicator">
+          <div class="eq-bars">
+            <span></span><span></span><span></span>
+          </div>
+          <span>NOW BROADCASTING</span>
+        </div>
+        <span id="liveRoomBadge" class="room-chip">...</span>
+      </div>
+
+      <div class="live-track-info">
+        <img id="liveThumb" class="live-thumb" src="" alt="">
+        <div class="live-meta">
+          <div id="liveTitle" class="live-title">Waiting for track...</div>
+          <div id="liveAuthor" class="live-sub">-</div>
+          <div id="liveUser" class="live-by"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="deck-body">
+      
+      <div class="field-group">
+        <label for="serverUrl" class="field-label">
+          <span>Backend URL</span>
+          <span class="label-hint">Render / LAN</span>
+        </label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+          </svg>
+          <input 
+            type="text" 
+            id="serverUrl" 
+            placeholder="https://your-app.onrender.com" 
+            spellcheck="false" 
+            autocomplete="off"
+          >
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="roomId" class="field-label">
+          <span>Room Code</span>
+          <span class="label-hint">Uppercase</span>
+        </label>
+        <div class="input-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
+          <input 
+            type="text" 
+            id="roomId" 
+            placeholder="OFFICE-1" 
+            class="input-mono uppercase" 
+            spellcheck="false" 
+            autocomplete="off"
+          >
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="toggleHostBtn" class="btn-deck btn-start">
+        <span class="btn-icon">⚡</span>
+        <span id="btnLabel">Start Hosting</span>
+      </button>
+
+      <!-- YouTube Notice / Quick Link -->
+      <div id="ytAlert" class="yt-alert">
+        <div class="yt-alert-icon">▶</div>
+        <div class="yt-alert-content">
+          <div class="yt-alert-title">Active YouTube Tab Required</div>
+          <div class="yt-alert-desc">Keep YouTube open on this machine to play songs.</div>
+        </div>
+        <button id="openYtBtn" class="btn-yt-link">Open Tab</button>
+      </div>
+
+    </div>
+
+    <!-- Footer Status Readout -->
+    <footer class="deck-footer">
+      <span id="connectionNote">System Ready</span>
+      <span class="engine-badge">ENGINE ACTIVE</span>
+    </footer>
+
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
